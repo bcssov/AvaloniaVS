@@ -74,7 +74,7 @@ namespace AvaloniaVS.Views
                 typeof(AvaloniaDesigner),
                 new PropertyMetadata("100%", HandleZoomLevelChanged));
 
-        private static string FmtZoomLevel(double v) => $"{v.ToString(CultureInfo.InvariantCulture)}%";
+        public static string FmtZoomLevel(double v) => $"{v.ToString(CultureInfo.InvariantCulture)}%";
 
         public static string[] ZoomLevels { get; } = new string[]
         {
@@ -98,6 +98,7 @@ namespace AvaloniaVS.Views
         private SemaphoreSlim _startingProcess = new SemaphoreSlim(1, 1);
         private bool _disposed;
         private double _scaling = 1;
+        private AvaloniaDesignerView _unPausedView;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AvaloniaDesigner"/> class.
@@ -135,6 +136,18 @@ namespace AvaloniaVS.Views
 
                     _isPaused = value;
                     StartStopProcessAsync().FireAndForget();
+
+                    if (value)
+                    {
+                        _unPausedView = View;
+                        // Hide the designer and only show the xaml source when debugging
+                        // This matches UWP/WPF's designer
+                        View = AvaloniaDesignerView.Source;
+                    }
+                    else
+                    {
+                        View = _unPausedView;
+                    }
                 }
             }
         }
@@ -269,6 +282,9 @@ namespace AvaloniaVS.Views
             _editor.TextView.TextBuffer.Properties.RemoveProperty(typeof(PreviewerProcess));
             _editor.TextView.TextBuffer.Properties.AddProperty(typeof(PreviewerProcess), Process);
 
+            _editor.TextView.Properties.RemoveProperty(typeof(AvaloniaDesigner));
+            _editor.TextView.Properties.AddProperty(typeof(AvaloniaDesigner), this);
+
             if (_editor.TextView.TextBuffer is ITextBuffer2 newBuffer)
             {
                 newBuffer.ChangedOnBackground += TextChanged;
@@ -384,7 +400,7 @@ namespace AvaloniaVS.Views
             }
         }
 
-        private bool TryProcessZoomLevelValue(out double scaling)
+        public bool TryProcessZoomLevelValue(out double scaling)
         {
             scaling = 1;
 
@@ -550,7 +566,7 @@ namespace AvaloniaVS.Views
 
         private async void ErrorChanged(object sender, EventArgs e)
         {
-            if (Process.Bitmap == null && Process.Error != null)
+            if (Process.Bitmap == null || Process.Error != null)
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -566,7 +582,7 @@ namespace AvaloniaVS.Views
 
         private async void FrameReceived(object sender, EventArgs e)
         {
-            if (Process.Bitmap != null)
+            if (Process.Bitmap != null && Process.Error == null)
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -588,16 +604,14 @@ namespace AvaloniaVS.Views
 
         private void ShowError(string heading, string message)
         {
-            previewer.Visibility = Visibility.Collapsed;
-            error.Visibility = Visibility.Visible;
+            errorIndicator.Visibility = Visibility.Visible;
             errorHeading.Text = heading;
             errorMessage.Text = message;
         }
 
         private void ShowPreview()
         {
-            previewer.Visibility = Visibility.Visible;
-            error.Visibility = Visibility.Collapsed;
+            errorIndicator.Visibility = Visibility.Collapsed;
         }
 
         private void TextChanged(object sender, TextContentChangedEventArgs e)

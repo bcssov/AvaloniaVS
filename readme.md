@@ -1,10 +1,19 @@
+[![2022 marketplace](https://img.shields.io/visual-studio-marketplace/v/AvaloniaTeam.AvaloniaVS.svg?label=2022-Marketplace)](https://marketplace.visualstudio.com/items?itemName=AvaloniaTeam.AvaloniaVS)
+[![2019 marketplace](https://img.shields.io/visual-studio-marketplace/v/AvaloniaTeam.AvaloniaforVisualStudio.svg?label=2019-Marketplace)](https://marketplace.visualstudio.com/items?itemName=AvaloniaTeam.AvaloniaforVisualStudio)
 # Avalonia for Visual Studio
+This repository is used to generate Avalonia Visual Studio extensions.
+Avalonia Visual Studio extension adds such capabilities to your Visual Studio:
+- XAML code completion.
+- XAML previewer.
+- It bundles Avalonia templates in your Visual Studio.
+- Icons for axaml files.
 
-XAML previewer and templates for the Avalonia UI framework.
+### VSIX packages for Visual Studio
+| [VS2019/VS2017](https://marketplace.visualstudio.com/items?itemName=AvaloniaTeam.AvaloniaforVisualStudio) | 
+| ------------- |
 
-https://github.com/AvaloniaUI/Avalonia
-
-https://marketplace.visualstudio.com/items?itemName=AvaloniaTeam.AvaloniaforVisualStudio
+| [VS2022](https://marketplace.visualstudio.com/items?itemName=AvaloniaTeam.AvaloniaVS) |
+| ------------- |
 
 # Building and debugging
 Before building project you will need to restore all submodules.
