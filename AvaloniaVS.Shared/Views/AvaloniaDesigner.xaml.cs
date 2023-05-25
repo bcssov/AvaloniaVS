@@ -14,6 +14,7 @@ using Avalonia.Ide.CompletionEngine.AssemblyMetadata;
 using Avalonia.Ide.CompletionEngine.DnlibMetadataProvider;
 using AvaloniaVS.Models;
 using AvaloniaVS.Services;
+using AvaloniaVS.Shared.Views;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
@@ -277,7 +278,19 @@ namespace AvaloniaVS.Views
 
         private void InitializeEditor()
         {
-            editorHost.Child = _editor.HostControl;
+            // The HostControl for the IWpfTextViewHost comes parented to two borders,
+            // find the root and use that for insertion into our designer pane.
+            // The old code unparented the WPF control from the inner border, which is fine,
+            // but this feels safer incase anything changes in the future
+            var content = _editor.HostControl as FrameworkElement;
+            var parent = VisualTreeHelper.GetParent(content);
+            while (parent != null)
+            {
+                content = parent as FrameworkElement;
+                parent = VisualTreeHelper.GetParent(content);
+            }
+
+            editorHost.Child = content;
 
             _editor.TextView.TextBuffer.Properties.RemoveProperty(typeof(PreviewerProcess));
             _editor.TextView.TextBuffer.Properties.AddProperty(typeof(PreviewerProcess), Process);
@@ -374,29 +387,24 @@ namespace AvaloniaVS.Views
                 return;
             }
 
-            if (View != AvaloniaDesignerView.Source)
+            // Change: keep the preview process alive even if we're in 
+            // Source only mode - it prevents the error icon from showing because
+            // of process exited and keeps the Error tagger active
+            if (IsPaused)
             {
-                if (IsPaused)
-                {
-                    pausedMessage.Visibility = Visibility.Visible;
-                    Process.Stop();
-                }
-                else if (!Process.IsRunning && IsLoaded)
-                {
-                    pausedMessage.Visibility = Visibility.Collapsed;
-
-                    if (SelectedTarget == null)
-                    {
-                        await LoadTargetsAsync();
-                    }
-
-                    await StartProcessAsync();
-                }
-            }
-            else if (!IsPaused && IsLoaded)
-            {
-                RebuildMetadata(null, null);
+                pausedMessage.Visibility = Visibility.Visible;
                 Process.Stop();
+            }
+            else if (!Process.IsRunning && IsLoaded)
+            {
+                pausedMessage.Visibility = Visibility.Collapsed;
+
+                if (SelectedTarget == null)
+                {
+                    await LoadTargetsAsync();
+                }
+
+                await StartProcessAsync();
             }
         }
 
@@ -655,13 +663,18 @@ namespace AvaloniaVS.Views
                 if (SplitOrientation == Orientation.Horizontal)
                 {
                     HorizontalGrid();
+                    var content = SwapPanesButton.Content as UIElement;
+                    content.RenderTransform = new RotateTransform(90);                    
                 }
                 else
                 {
                     VerticalGrid();
+                    var content = SwapPanesButton.Content as UIElement;
+                    content.RenderTransform = null;
                 }
 
                 splitter.Visibility = Visibility.Visible;
+                SwapPanesButton.Visibility = Visibility.Visible;
             }
             else
             {
@@ -669,6 +682,45 @@ namespace AvaloniaVS.Views
                 previewRow.Height = View == AvaloniaDesignerView.Design ? OneStar : ZeroStar;
                 codeRow.Height = View == AvaloniaDesignerView.Source ? OneStar : ZeroStar;
                 splitter.Visibility = Visibility.Collapsed;
+                SwapPanesButton.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void SwapPreviewAndXamlPanes(object sender, RoutedEventArgs args)
+        {
+            switch (SplitOrientation)
+            {
+                case Orientation.Horizontal:
+                    var editorRow = Grid.GetRow(editorHost);
+                    
+                    if (editorRow == 0)
+                    {
+                        Grid.SetRow(editorHost, 2);
+                        Grid.SetRow(previewer, 0);
+                    }
+                    else
+                    {
+                        Grid.SetRow(editorHost, 0);
+                        Grid.SetRow(previewer, 2);
+                    }
+
+                    break;
+
+                case Orientation.Vertical:
+                    var editorCol = Grid.GetColumn(editorHost);
+
+                    if (editorCol == 0)
+                    {
+                        Grid.SetColumn(editorHost, 2);
+                        Grid.SetColumn(previewer, 0);
+                    }
+                    else
+                    {
+                        Grid.SetColumn(editorHost, 0);
+                        Grid.SetColumn(previewer, 2);
+                    }
+
+                    break;
             }
         }
 
@@ -740,7 +792,6 @@ namespace AvaloniaVS.Views
             if (d is AvaloniaDesigner designer)
             {
                 designer.UpdateLayoutForView();
-                designer.StartStopProcessAsync().FireAndForget();
             }
         }
 

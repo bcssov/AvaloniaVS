@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+        <PackageReference Include="xunit" Version="2.4.2" />
+        <PackageReference Include="Avalonia" Version="11.0-preview4" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Test.bmp" />
+      <AvaloniaResource Include="Test.bmp" />
+      <AvaloniaResource Include="Test.xaml" />
+      <AvaloniaResource Include="TestCompiledTheme.xaml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\CompletionEngine\Avalonia.Ide.CompletionEngine.DnlibMetadataProvider\Avalonia.Ide.CompletionEngine.DnlibMetadataProvider.csproj" />
+      <ProjectReference Include="..\..\CompletionEngine\Avalonia.Ide.CompletionEngine\Avalonia.Ide.CompletionEngine.csproj" />
+      <ProjectReference Include="..\TestAssembly1\TestAssembly1.csproj" Aliases="A1" />
+      <ProjectReference Include="..\TestAssembly2\TestAssembly2.csproj" Aliases="A2" />
+    </ItemGroup>
+
+</Project>
