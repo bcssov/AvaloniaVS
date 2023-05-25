@@ -61,7 +61,6 @@
     <None Include="AvaloniaResourceDictionaryTemplate.ico" />
     <None Include="ResourceDictionary.axaml" />
   </ItemGroup>
-  
   <ItemGroup>
     <VSTemplate Include="AvaloniaResourceDictionaryTemplate.vstemplate">
       <OutputSubPath>Avalonia</OutputSubPath>
